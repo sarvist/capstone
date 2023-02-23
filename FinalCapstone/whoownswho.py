@@ -71,18 +71,15 @@ class Graph:
     Ian will update this a little bit
     '''
     def _init_radio(self):
-        GPIO.setmode(GPIO.BCM)   
-        pipes = [[0xE0, 0xE0, 0xF1, 0xF1, 0xE0], [0xF1, 0xF1, 0xF0, 0xF0, 0xE0]]
-        self.radio = NRF24(GPIO, spidev.SpiDev())   # use the gpio pins
-        self.radio.begin(0, 25)   # start the radio and set the ce,csn pin ce= GPIO08, csn= GPIO25
-        self.radio.setPayloadSize(32)  #set the payload size as 32 bytes
-        self.radio.setChannel(0x76) # set the channel as 76 hex
-        self.radio.setDataRate(NRF24.BR_1MBPS)    # set radio data rate
-        self.radio.setPALevel(NRF24.PA_MIN)  # set PA level
-        self.radio.setAutoAck(True)       # set acknowledgement as true 
-        self.radio.enableDynamicPayloads()
-        self.radio.enableAckPayload()
-        self.radio.openWritingPipe(pipes[0])     # open the defined pipe for writing
+        GPIO.setmode(GPIO.BCM)
+        radio = NRF24(GPIO, spidev.SpiDev())
+        pipes = [[0xE0, 0xE0, 0xF1, 0xF1, 0xE1],[0xF1, 0xF1, 0xF0, 0xF0, 0xE0]]
+        radio.begin(0, 25)
+        radio.setPayloadSize(2)
+        radio.setPALevel(NRF24.PA_MIN)
+        radio.setAutoAck(False)
+        radio.openWritingPipe(pipes[0])
+        radio.stopListening()
 
     '''
     Nundita will remove this  
@@ -244,31 +241,20 @@ class Graph:
     def sendStuff(self,message):
         
         if(message == 'f'): #Forward command is one
-            message = str(1)
+            message = str('F')
         elif(message == 's'):#stop command is two
-            message = str(2)
+            message = str('S')
         elif(message == 'l'):# Left command is three
-            message = str(3)
+            message = str('L')
         elif(message == 'r'): #Right command is 4
-            message = str(4)
+            message = str('R')
         elif(message == 'b'): #backwards command is 5
-            message = str(5)
+            message = str('B')
             
-        sendMessage = list(message)  #the message to be sent
-        while len(sendMessage) < 32:    
-            sendMessage.append(0)
+        sendMessage = list(message)  #the message to be sent   
+        sendMessage.append(0)
         
-        start = time.time()      #start the time for checking delivery time
         self.radio.write(sendMessage)   # just write the message to radio
-        
-        self.radio.startListening()        # Start listening the radio
-        while not self.radio.available(0):
-            time.sleep(1/1000)
-            if time.time() - start > 2:
-                print("Timed out.")  # print errror message if radio disconnected or not functioning anymore
-            break
-        self.radio.stopListening()     # close radio
-        time.sleep(1)  # give delay of 3 seconds
     
     '''
     CCA
